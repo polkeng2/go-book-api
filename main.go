@@ -2,11 +2,14 @@ package main
 
 import (
 	"database/sql"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
@@ -21,7 +24,7 @@ func main() {
 
 	_, err = db.Exec("CREATE TABLE IF NOT EXISTS books (id SERIAL PRIMARY KEY, titol TEXT, autor TEXT, prestatge TEXT, posicio TEXT, habitacio TEXT, tipus TEXT, editorial TEXT, idioma TEXT, notes TEXT)")
 
-	fmt.Println("Server is running on port 8000")
+	//parseCSV(db)
 
 	router := mux.NewRouter()
 
@@ -124,6 +127,47 @@ func deleteBook(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
+		_, err = db.Exec("SELECT setval('books_id_seq', (SELECT MAX(id) FROM books))")
+		if err != nil {
+			http.Error(w, http.StatusText(500), 500)
+			return
+		}
+
 		w.WriteHeader(http.StatusOK)
+	}
+}
+
+func parseCSV(db *sql.DB) {
+	// Open the file
+	csvfile, err := os.Open("biblioteca.csv")
+	if err != nil {
+		log.Fatalln("Couldn't open the csv file", err)
+	}
+
+	// Parse the file
+	r := csv.NewReader(csvfile)
+	for {
+		// Read each record from csv
+		record, err := r.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Fatal(err)
+		}
+		
+		//make sure the tipus section starts with capital letter
+		record[5] = strings.Title(record[5])
+		record[6] = strings.Title(record[6])
+		if record[8] != "" {
+			record[8] = strings.Title(record[8])
+		}
+		
+		_, dbErr := db.Exec("INSERT INTO books (titol, autor, prestatge, posicio, habitacio, tipus, editorial, idioma, notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)", record[0], record[1], record[2], record[3], record[4], record[5], record[6], record[7], record[8])
+		if dbErr != nil {
+			log.Fatal(dbErr)
+		}
+
+
 	}
 }

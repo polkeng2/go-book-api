@@ -29,6 +29,7 @@ func main() {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/", returnHelloWorld()).Methods("GET")
+	router.HandleFunc("/books/first", getFirstBook(db)).Methods("GET")
 	router.HandleFunc("/books", getBooks(db)).Methods("GET")
 	router.HandleFunc("/books", createBook(db)).Methods("POST")
 	router.HandleFunc("/books", updateBook(db)).Methods("PUT")
@@ -51,6 +52,20 @@ func returnHelloWorld() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, "Hello World")
+	}
+}
+
+func getFirstBook(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		book := Book{}
+		err := db.QueryRow("SELECT * FROM books LIMIT 1").Scan(&book.ID, &book.Titol, &book.Autor, &book.Prestatge, &book.Posicio, &book.Habitacio, &book.Tipus, &book.Editorial, &book.Idioma, &book.Notes)
+		if err != nil {
+			http.Error(w, http.StatusText(500), 500)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(book)
 	}
 }
 

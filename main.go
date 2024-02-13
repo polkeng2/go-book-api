@@ -34,7 +34,9 @@ func main() {
 	router.HandleFunc("/books", updateBook(db)).Methods("PUT")
 	router.HandleFunc("/books", deleteBook(db)).Methods("DELETE")
 
-	http.ListenAndServe(":8000", handleMiddleware(router))
+	//listen on 0.0.0.0
+
+	log.Fatal(http.ListenAndServe("0.0.0.0:8000", handleMiddleware(router)))
 }
 
 

@@ -28,6 +28,7 @@ func main() {
 
 	router := mux.NewRouter()
 
+	router.HandleFunc("/", returnHelloWorld()).Methods("GET")
 	router.HandleFunc("/books", getBooks(db)).Methods("GET")
 	router.HandleFunc("/books", createBook(db)).Methods("POST")
 	router.HandleFunc("/books", updateBook(db)).Methods("PUT")
@@ -42,6 +43,13 @@ func handleMiddleware(next http.Handler) http.Handler {
 		w.Header().Set("Content-Type", "application/json")
 		next.ServeHTTP(w, r)
 	})
+}
+
+func returnHelloWorld() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "Hello World")
+	}
 }
 
 func getBooks(db *sql.DB) http.HandlerFunc {

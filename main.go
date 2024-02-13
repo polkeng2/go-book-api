@@ -28,7 +28,7 @@ func main() {
 
 	router := mux.NewRouter()
 
-	router.HandleFunc("/", returnHelloWorld()).Methods("GET")
+	router.HandleFunc("/", getFirstBook(db)).Methods("GET")
 	router.HandleFunc("/books/first", getFirstBook(db)).Methods("GET")
 	router.HandleFunc("/books", getBooks(db)).Methods("GET")
 	router.HandleFunc("/books", createBook(db)).Methods("POST")

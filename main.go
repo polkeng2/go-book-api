@@ -36,7 +36,7 @@ func main() {
 
 	//listen on 0.0.0.0
 
-	log.Fatal(http.ListenAndServe("0.0.0.0:8000", handleMiddleware(router)))
+	log.Fatal(http.ListenAndServe(os.Getenv("PORT"), handleMiddleware(router)))
 }
 
 

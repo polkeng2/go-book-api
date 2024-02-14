@@ -20,12 +20,14 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	fmt.Println("Connected to the database")
+
 	defer db.Close()
 
 	_, err = db.Exec("CREATE TABLE IF NOT EXISTS books (id SERIAL PRIMARY KEY, titol TEXT, autor TEXT, prestatge TEXT, posicio TEXT, habitacio TEXT, tipus TEXT, editorial TEXT, idioma TEXT, notes TEXT)")
 
 	if err != nil {
-		log.Fatal("Error creating database table: ", err)
+		log.Fatal(err)
 	}
 	//parseCSV(db)
 

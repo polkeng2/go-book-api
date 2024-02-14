@@ -9,7 +9,7 @@ services:
       DATABASE_URL: "host=go_db user=postgres password=postgres dbname=postgres sslmode=disable"
       PORT: 8000
     ports:
-      - "8000:8000"
+      - "0.0.0.0:8000:8000"
     depends_on:
       - go_db
   go_db:
@@ -20,7 +20,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_DB: postgres
     ports:
-      - "5432:5432"
+      - "0.0.0.0:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
 

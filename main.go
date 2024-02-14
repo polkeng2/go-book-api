@@ -24,11 +24,14 @@ func main() {
 
 	_, err = db.Exec("CREATE TABLE IF NOT EXISTS books (id SERIAL PRIMARY KEY, titol TEXT, autor TEXT, prestatge TEXT, posicio TEXT, habitacio TEXT, tipus TEXT, editorial TEXT, idioma TEXT, notes TEXT)")
 
+	if err != nil {
+		log.Fatal("Error creating database table: ", err)
+	}
 	//parseCSV(db)
 
 	router := mux.NewRouter()
 
-	router.HandleFunc("/", getFirstBook(db)).Methods("GET")
+	router.HandleFunc("/", returnHelloWorld()).Methods("GET")
 	router.HandleFunc("/books/first", getFirstBook(db)).Methods("GET")
 	router.HandleFunc("/books", getBooks(db)).Methods("GET")
 	router.HandleFunc("/books", createBook(db)).Methods("POST")
@@ -60,7 +63,7 @@ func getFirstBook(db *sql.DB) http.HandlerFunc {
 		book := Book{}
 		err := db.QueryRow("SELECT * FROM books LIMIT 1").Scan(&book.ID, &book.Titol, &book.Autor, &book.Prestatge, &book.Posicio, &book.Habitacio, &book.Tipus, &book.Editorial, &book.Idioma, &book.Notes)
 		if err != nil {
-			http.Error(w, http.StatusText(400), 400)
+			http.Error(w, http.StatusText(500), 500)
 			return
 		}
 

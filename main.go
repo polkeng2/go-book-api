@@ -22,6 +22,10 @@ func main() {
 	}
 	fmt.Println("Connected to the database")
 
+	_, err = db.Query("SELECT 1")
+	
+	fmt.Println(err)
+
 	defer db.Close()
 
 	_, err = db.Exec("CREATE TABLE IF NOT EXISTS books (id SERIAL PRIMARY KEY, titol TEXT, autor TEXT, prestatge TEXT, posicio TEXT, habitacio TEXT, tipus TEXT, editorial TEXT, idioma TEXT, notes TEXT)")

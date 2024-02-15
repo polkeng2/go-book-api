@@ -21,6 +21,7 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("Connected to the database")
+	fmt.Println(os.Getenv("DATABASE_URL"))
 
 	_, err = db.Query("SELECT 1")
 	

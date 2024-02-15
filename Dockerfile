@@ -15,5 +15,7 @@ RUN go build -o api .
 #EXPOSE the port
 EXPOSE 8000
 
+EXPOSE 5432
+
 # Run the executable
 CMD ["./api"]

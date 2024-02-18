@@ -20,12 +20,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Connected to the database")
-	fmt.Println(os.Getenv("DATABASE_URL"))
-
-	_, err = db.Query("SELECT 1")
-	
-	fmt.Println(err)
 
 	defer db.Close()
 
@@ -34,7 +28,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	//parseCSV(db)
+	
+	importAndParseDB(db)
 
 	router := mux.NewRouter()
 
@@ -44,8 +39,6 @@ func main() {
 	router.HandleFunc("/books", createBook(db)).Methods("POST")
 	router.HandleFunc("/books", updateBook(db)).Methods("PUT")
 	router.HandleFunc("/books", deleteBook(db)).Methods("DELETE")
-
-	//listen on 0.0.0.0
 
 	log.Fatal(http.ListenAndServe(":" + os.Getenv("PORT"), handleMiddleware(router)))
 }
@@ -172,7 +165,18 @@ func deleteBook(db *sql.DB) http.HandlerFunc {
 	}
 }
 
-func parseCSV(db *sql.DB) {
+func importAndParseDB(db *sql.DB) {
+
+	// Check the db is empty
+	var count int
+	err := db.QueryRow("SELECT COUNT(*) FROM books").Scan(&count)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if count <= 0 {
+		return
+	}
+
 	// Open the file
 	csvfile, err := os.Open("biblioteca.csv")
 	if err != nil {
@@ -202,7 +206,5 @@ func parseCSV(db *sql.DB) {
 		if dbErr != nil {
 			log.Fatal(dbErr)
 		}
-
-
 	}
 }

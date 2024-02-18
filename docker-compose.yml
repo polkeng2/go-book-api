@@ -3,7 +3,7 @@ version: "3.7"
 services:
   go-app:
     container_name: go-app
-    image: polkeng2/go-app:1.0.1
+    image: polkeng2/go-app:latest
     build: .
     environment:
       DATABASE_URL: "host=go_db user=postgres password=postgres dbname=postgres sslmode=disable"
@@ -20,8 +20,6 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_DB: postgres
     ports:
-      - "5432:5432"
-    expose:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data

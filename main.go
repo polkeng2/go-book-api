@@ -35,12 +35,35 @@ func main() {
 
 	router.HandleFunc("/", returnHelloWorld()).Methods("GET")
 	router.HandleFunc("/books/first", getFirstBook(db)).Methods("GET")
-	router.HandleFunc("/books", getBooks(db)).Methods("GET")
-	router.HandleFunc("/books", createBook(db)).Methods("POST")
+	router.HandleFunc("/postbooks", createBook(db))
+/* 	router.HandleFunc("/books", getBooks(db)).Methods("GET")
 	router.HandleFunc("/books", updateBook(db)).Methods("PUT")
-	router.HandleFunc("/books", deleteBook(db)).Methods("DELETE")
+	router.HandleFunc("/books/{id}", deleteBook(db)).Methods("DELETE") */
+	router.HandleFunc("/books", handleBooks(db))
 
-	log.Fatal(http.ListenAndServe(":" + os.Getenv("PORT"), handleMiddleware(router)))
+	enhancedRouter := enableCORS(handleMiddleware(router))
+
+
+	log.Fatal(http.ListenAndServe(":" + os.Getenv("PORT"), enhancedRouter))
+}
+
+func enableCORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Set CORS headers
+		w.Header().Set("Access-Control-Allow-Origin", "*") // Allow any origin
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+		// Check if the request is for CORS preflight
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		// Pass down the request to the next middleware (or final handler)
+		next.ServeHTTP(w, r)
+	})
+
 }
 
 
@@ -49,6 +72,23 @@ func handleMiddleware(next http.Handler) http.Handler {
 		w.Header().Set("Content-Type", "application/json")
 		next.ServeHTTP(w, r)
 	})
+}
+
+func handleBooks(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "POST" {
+			createBook(db)(w, r)
+		}
+		if r.Method == "GET" {
+			getBooks(db)(w, r)
+		}
+		if r.Method == "PUT" {
+			updateBook(db)(w, r)
+		}
+		if r.Method == "DELETE" {
+			deleteBook(db)(w, r)
+		}
+	}
 }
 
 func returnHelloWorld() http.HandlerFunc {
@@ -103,6 +143,10 @@ func getBooks(db *sql.DB) http.HandlerFunc {
 
 func createBook(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			http.Error(w, http.StatusText(405), 405)
+			return
+		}
 		book := Book{}
 		err := json.NewDecoder(r.Body).Decode(&book)
 		fmt.Println(book)
@@ -118,6 +162,7 @@ func createBook(db *sql.DB) http.HandlerFunc {
 		}
 
 		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(book)
 	}
 }
 
@@ -130,6 +175,7 @@ func updateBook(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
+		//TODO: check id always starts at 1
 		_, err = db.Exec("UPDATE books SET titol = $1, autor = $2, prestatge = $3, posicio = $4, habitacio = $5, tipus = $6, editorial = $7, idioma = $8, notes = $9 WHERE id = $10", book.Titol, book.Autor, book.Prestatge, book.Posicio, book.Habitacio, book.Tipus, book.Editorial, book.Idioma, book.Notes, book.ID)
 		if err != nil {
 			http.Error(w, http.StatusText(500), 500)
@@ -142,14 +188,11 @@ func updateBook(db *sql.DB) http.HandlerFunc {
 
 func deleteBook(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		book := Book{}
-		err := json.NewDecoder(r.Body).Decode(&book)
-		if err != nil {
-			http.Error(w, http.StatusText(400), 400)
-			return
-		}
+		
+		id := mux.Vars(r)["id"]
+		
 
-		_, err = db.Exec("DELETE FROM books WHERE id = $1", book.ID)
+		_, err := db.Exec("DELETE FROM books WHERE id = $1", id)
 		if err != nil {
 			http.Error(w, http.StatusText(500), 500)
 			return
@@ -173,7 +216,7 @@ func importAndParseDB(db *sql.DB) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if count <= 0 {
+	if count > 0 {
 		return
 	}
 

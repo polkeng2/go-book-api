@@ -21,7 +21,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	defer db.Close()
+	//defer db.Close()
+
+	//Create schema
+	
 
 	_, err = db.Exec("CREATE TABLE IF NOT EXISTS books (id SERIAL PRIMARY KEY, titol TEXT, autor TEXT, prestatge TEXT, posicio TEXT, habitacio TEXT, tipus TEXT, editorial TEXT, idioma TEXT, notes TEXT)")
 
@@ -35,16 +38,16 @@ func main() {
 
 	router.HandleFunc("/", returnHelloWorld()).Methods("GET")
 	router.HandleFunc("/books/first", getFirstBook(db)).Methods("GET")
-	router.HandleFunc("/postbooks", createBook(db))
-/* 	router.HandleFunc("/books", getBooks(db)).Methods("GET")
-	router.HandleFunc("/books", updateBook(db)).Methods("PUT")
-	router.HandleFunc("/books/{id}", deleteBook(db)).Methods("DELETE") */
-	router.HandleFunc("/books", handleBooks(db))
+ 	router.HandleFunc("/books", getBooks(db)).Methods("GET")
+	router.HandleFunc("/books", createBook(db)).Methods("POST")
+	router.HandleFunc("/books/{id}", deleteBook(db)).Methods("DELETE") 
+	router.HandleFunc("/books/{id}", updateBook(db)).Methods("PUT") 
 
 	enhancedRouter := enableCORS(handleMiddleware(router))
 
-
 	log.Fatal(http.ListenAndServe(":" + os.Getenv("PORT"), enhancedRouter))
+
+	fmt.Println("Server is running on port 8080")
 }
 
 func enableCORS(next http.Handler) http.Handler {
@@ -72,23 +75,6 @@ func handleMiddleware(next http.Handler) http.Handler {
 		w.Header().Set("Content-Type", "application/json")
 		next.ServeHTTP(w, r)
 	})
-}
-
-func handleBooks(db *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == "POST" {
-			createBook(db)(w, r)
-		}
-		if r.Method == "GET" {
-			getBooks(db)(w, r)
-		}
-		if r.Method == "PUT" {
-			updateBook(db)(w, r)
-		}
-		if r.Method == "DELETE" {
-			deleteBook(db)(w, r)
-		}
-	}
 }
 
 func returnHelloWorld() http.HandlerFunc {
@@ -168,6 +154,7 @@ func createBook(db *sql.DB) http.HandlerFunc {
 
 func updateBook(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		id := mux.Vars(r)["id"]
 		book := Book{}
 		err := json.NewDecoder(r.Body).Decode(&book)
 		if err != nil {
@@ -176,7 +163,7 @@ func updateBook(db *sql.DB) http.HandlerFunc {
 		}
 
 		//TODO: check id always starts at 1
-		_, err = db.Exec("UPDATE books SET titol = $1, autor = $2, prestatge = $3, posicio = $4, habitacio = $5, tipus = $6, editorial = $7, idioma = $8, notes = $9 WHERE id = $10", book.Titol, book.Autor, book.Prestatge, book.Posicio, book.Habitacio, book.Tipus, book.Editorial, book.Idioma, book.Notes, book.ID)
+		_, err = db.Exec("UPDATE books SET titol = $1, autor = $2, prestatge = $3, posicio = $4, habitacio = $5, tipus = $6, editorial = $7, idioma = $8, notes = $9 WHERE id = $10", book.Titol, book.Autor, book.Prestatge, book.Posicio, book.Habitacio, book.Tipus, book.Editorial, book.Idioma, book.Notes, id)
 		if err != nil {
 			http.Error(w, http.StatusText(500), 500)
 			return
@@ -187,11 +174,8 @@ func updateBook(db *sql.DB) http.HandlerFunc {
 }
 
 func deleteBook(db *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		
+	return func(w http.ResponseWriter, r *http.Request) {		
 		id := mux.Vars(r)["id"]
-		
-
 		_, err := db.Exec("DELETE FROM books WHERE id = $1", id)
 		if err != nil {
 			http.Error(w, http.StatusText(500), 500)

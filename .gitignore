@@ -16,3 +16,6 @@
 
 # Docker Compose file
 docker-compose.yml
+
+cert.pem
+key.pem

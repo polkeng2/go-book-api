@@ -12,3 +12,8 @@ type Book struct {
 	Idioma    string `json:"idioma"`
 	Notes     string `json:"notes"`
 }
+
+type LoginData struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}

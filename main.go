@@ -21,10 +21,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	//defer db.Close()
-
-	//Create schema
-	
+	defer db.Close()	
 
 	_, err = db.Exec("CREATE TABLE IF NOT EXISTS books (id SERIAL PRIMARY KEY, titol TEXT, autor TEXT, prestatge TEXT, posicio TEXT, habitacio TEXT, tipus TEXT, editorial TEXT, idioma TEXT, notes TEXT)")
 
@@ -42,12 +39,11 @@ func main() {
 	router.HandleFunc("/books", createBook(db)).Methods("POST")
 	router.HandleFunc("/books/{id}", deleteBook(db)).Methods("DELETE") 
 	router.HandleFunc("/books/{id}", updateBook(db)).Methods("PUT") 
+	router.HandleFunc("/login", handleLogin()).Methods("POST")
 
 	enhancedRouter := enableCORS(handleMiddleware(router))
 
 	log.Fatal(http.ListenAndServe(":" + os.Getenv("PORT"), enhancedRouter))
-
-	fmt.Println("Server is running on port 8080")
 }
 
 func enableCORS(next http.Handler) http.Handler {
@@ -72,9 +68,34 @@ func enableCORS(next http.Handler) http.Handler {
 
 func handleMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if(r.Method != "GET" && r.URL.Path != "/login") {
+			token := r.Header.Get("Authorization")
+			if token != os.Getenv("TOKEN") {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+		}
 		w.Header().Set("Content-Type", "application/json")
 		next.ServeHTTP(w, r)
 	})
+}
+
+func handleLogin() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userData := LoginData{}
+		err := json.NewDecoder(r.Body).Decode(&userData)
+		if err != nil {
+			http.Error(w, http.StatusText(400), 400)
+			return
+		}
+		
+		if userData.Email == os.Getenv("EMAIL") && userData.Password == os.Getenv("PASSWORD") {
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(os.Getenv("TOKEN"))
+		} else {
+			w.WriteHeader(http.StatusUnauthorized)
+		}
+	}
 }
 
 func returnHelloWorld() http.HandlerFunc {
